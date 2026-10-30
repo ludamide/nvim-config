@@ -62,8 +62,6 @@ do
 
   -- Asks if you wish to save the current file due to unsaved changes in the buffer
   vim.o.confirm = true
-
-
 end
 
 -- KEYMAPS & AUTOCMDS
@@ -107,5 +105,79 @@ do
     group = vim.api.nvim_create_augroup('highlight-yank', { clear = true }),
     callback = function() vim.hl.on_yank() end,
   })
+end
+
+-- PLUGIN MANAGER INTRO
+do
+  local function run_build(name, cmd, cwd)
+    local result = vim.system(cmd, { cwd = cwd }):wait()
+    if result.code ~= 0 then
+      local stderr = result.stderr or ''
+      local stdout = result.stdout or ''
+      local output = stderr ~= '' and stderr or stdout
+      if output == '' then output = 'No output from build command.' end
+      vim.notify(('Build failed for %s:\n%s'):format(name, output), vim.log.levels.ERROR)
+    end
+  end
+
+  -- Runs the appropriate build command after a plugin is installed or updated
+  vim.api.nvim_create_autocmd('PackChanged', {
+    callback = function(ev)
+      local name = ev.data.spec.name
+      local kind = ev.data.kind
+      if kind ~= 'install' and kind ~= 'update' then return end
+
+      if name == 'telescope-fzf-native.nvim' and vim.fn.executable 'make' == 1 then
+        run_build(name, { 'make' }, ev.data.path)
+        return
+      end
+
+      if name == 'LuaSnip' then
+        if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then
+          run_build(name, { 'make', 'install_jsregexp' }, ev.data.path)
+        end
+        return
+      end
+
+      if name == 'nvim-treesitter' then
+        if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
+        vim.cmd 'TSUpdate'
+        return
+      end
+    end,
+  })
+end
+
+--- Helper function for plugins hosted on GitHub.
+---@param repo string
+---@return string
+local function gh(repo) return 'https://github.com/' .. repo end
+
+-- UI / CORE UX PLUGINS
+do
+  -- Detects and sets indentation automatically
+  vim.pack.add { gh 'NMAC427/guess-indent.nvim' }
+  require('guess-indent').setup {}
+
+  -- Shows pending keybinds
+  vim.pack.add { gh 'folke/which-key.nvim' }
+  require('which-key').setup {
+    delay = 0,
+    icons = { mappings = vim.g.have_nerd_font },
+    spec = {
+      { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
+      { 'gr', group = 'LSP Actions', mode = { 'n' } },
+    },
+  }
+
+  -- Colorscheme
+  vim.pack.add { gh 'sainnhe/sonokai' }
+  vim.g.sonokai_enable_italic = true
+  vim.g.sonokai_style = 'maia' -- values: default | atlantis | andromeda | shusia | maia | espresso
+  vim.cmd.colorscheme 'sonokai'
+
+  -- Highlights todos in comments
+  vim.pack.add { gh 'folke/todo-comments.nvim' }
+  require('todo-comments').setup {}
 end
 
