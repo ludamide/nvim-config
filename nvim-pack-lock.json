@@ -4,6 +4,10 @@
       "rev": "84a4987ff36798c2fc1169cbaff67960aed9776f",
       "src": "https://github.com/NMAC427/guess-indent.nvim"
     },
+    "mini.nvim": {
+      "rev": "6d5a29e86a7352739506c28e0bc50fe214b5216f",
+      "src": "https://github.com/nvim-mini/mini.nvim"
+    },
     "plenary.nvim": {
       "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
       "src": "https://github.com/nvim-lua/plenary.nvim"
