@@ -177,7 +177,10 @@ do
   vim.cmd.colorscheme 'sonokai'
 
   -- Highlights todos in comments
-  vim.pack.add { gh 'folke/todo-comments.nvim' }
+  vim.pack.add {
+    gh 'nvim-lua/plenary.nvim',
+    gh 'folke/todo-comments.nvim',
+  }
   require('todo-comments').setup {}
 end
 
