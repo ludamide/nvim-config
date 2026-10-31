@@ -133,9 +133,7 @@ do
       end
 
       if name == 'LuaSnip' then
-        if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then
-          run_build(name, { 'make', 'install_jsregexp' }, ev.data.path)
-        end
+        if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
         return
       end
 
@@ -211,6 +209,7 @@ do
   -- Simple statusline
   local statusline = require 'mini.statusline'
   statusline.setup { use_icons = vim.g.have_nerd_font }
+  ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_location = function() return '%2l:%-2v' end
 end
 
@@ -222,9 +221,7 @@ do
     gh 'nvim-telescope/telescope.nvim',
     gh 'nvim-telescope/telescope-ui-select.nvim',
   }
-  if vim.fn.executable 'make' == 1 then
-    table.insert(telescope_plugins, gh 'nvim-telescope/telescope-fzf-native.nvim')
-  end
+  if vim.fn.executable 'make' == 1 then table.insert(telescope_plugins, gh 'nvim-telescope/telescope-fzf-native.nvim') end
 
   vim.pack.add(telescope_plugins)
   require('telescope').setup {
@@ -248,24 +245,39 @@ do
   vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
   vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
   vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-  vim.keymap.set('n', '<leader>/', function()
-    builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-      winblend = 10,
-      previewer = false,
-    })
-  end, { desc = '[/] Fuzzily search in current buffer' })
-  vim.keymap.set('n', '<leader>s/', function()
-    builtin.live_grep {
-      grep_open_files = true,
-      prompt_title = 'Live Grep in Open Files',
-    }
-  end, { desc = '[S]earch [/] in Open Files' })
-  vim.keymap.set('n', '<leader>sn', function()
-    builtin.find_files {
-      cwd = vim.fn.stdpath 'config',
-      follow = true,
-    }
-  end, { desc = '[S]earch [N]eovim files' })
+  vim.keymap.set(
+    'n',
+    '<leader>/',
+    function()
+      builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+        winblend = 10,
+        previewer = false,
+      })
+    end,
+    { desc = '[/] Fuzzily search in current buffer' }
+  )
+  vim.keymap.set(
+    'n',
+    '<leader>s/',
+    function()
+      builtin.live_grep {
+        grep_open_files = true,
+        prompt_title = 'Live Grep in Open Files',
+      }
+    end,
+    { desc = '[S]earch [/] in Open Files' }
+  )
+  vim.keymap.set(
+    'n',
+    '<leader>sn',
+    function()
+      builtin.find_files {
+        cwd = vim.fn.stdpath 'config',
+        follow = true,
+      }
+    end,
+    { desc = '[S]earch [N]eovim files' }
+  )
 
   -- Telescope-based LSP pickers when an LSP attaches to a buffer
   vim.api.nvim_create_autocmd('LspAttach', {
@@ -329,9 +341,11 @@ do
       end
 
       if client and client:supports_method('textDocument/inlayHint', event.buf) then
-        map('<leader>th', function()
-          vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-        end, '[T]oggle Inlay [H]ints')
+        map(
+          '<leader>th',
+          function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end,
+          '[T]oggle Inlay [H]ints'
+        )
       end
     end,
   })
@@ -346,12 +360,12 @@ do
 
         if client.workspace_folders then
           local path = client.workspace_folders[1].name
-          if path ~= vim.fn.stdpath 'config' and (
-            vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')
-          ) then return end
+          if path ~= vim.fn.stdpath 'config' and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')) then
+            return
+          end
         end
 
-        local current_settings = client.config.settings
+        local current_settings = client.config.settings --[[@as lspconfig.settings.lua_ls]]
         client.config.settings.Lua = vim.tbl_deep_extend('force', current_settings.Lua, {
           runtime = {
             version = 'LuaJIT',
@@ -359,7 +373,10 @@ do
           },
           workspace = {
             checkThirdParty = false,
-            library = vim.api.nvim_get_runtime_file('', true),
+            library = vim.tbl_filter(
+              function(d) return not d:match(vim.fn.stdpath 'config' .. '/?a?f?t?e?r?') end,
+              vim.api.nvim_get_runtime_file('', true)
+            ),
           },
         })
       end,
@@ -397,3 +414,29 @@ do
   end
 end
 
+-- FORMATTING
+do
+  vim.pack.add { gh 'stevearc/conform.nvim' }
+  require('conform').setup {
+    notify_on_error = false,
+    format_on_save = function(bufnr)
+      -- Specifies filetypes to autoformat on save
+      local enabled_filetypes = {
+        lua = true,
+      }
+      if enabled_filetypes[vim.bo[bufnr].filetype] then
+        return { timeout_ms = 500 }
+      else
+        return nil
+      end
+    end,
+    default_format_opts = {
+      lsp_format = 'fallback', -- uses external formatters if configured below, otherwise use LSP formatting
+    },
+    formatters_by_ft = {
+      lua = { 'stylua' },
+    },
+  }
+
+  vim.keymap.set({ 'n', 'v' }, '<leader>f', function() require('conform').format { async = true } end, { desc = '[F]ormat buffer' })
+end
