@@ -515,3 +515,15 @@ do
     end,
   })
 end
+
+-- NEXT STEPS
+do
+  -- Neo-tree
+  vim.pack.add {
+    gh 'MunifTanjim/nui.nvim',
+    gh 'nvim-lua/plenary.nvim',
+    { src = gh 'nvim-neo-tree/neo-tree.nvim', version = vim.version.range '*' },
+  }
+  vim.keymap.set('n', '\\', '<cmd>Neotree toggle<CR>', { desc = 'Neotree reveal', silent = true })
+  require('neo-tree').setup {}
+end
