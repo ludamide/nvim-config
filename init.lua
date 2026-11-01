@@ -440,3 +440,34 @@ do
 
   vim.keymap.set({ 'n', 'v' }, '<leader>f', function() require('conform').format { async = true } end, { desc = '[F]ormat buffer' })
 end
+
+-- AUTOCOMPLETE & SNIPPETS
+do
+  -- Snippet engine
+  vim.pack.add {
+    gh 'rafamadriz/friendly-snippets',
+    { src = gh 'L3MON4D3/LuaSnip', version = vim.version.range '2.*' },
+  }
+  require('luasnip').setup {}
+  require('luasnip.loaders.from_vscode').lazy_load()
+
+  -- Autocomplete engine
+  vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
+  require('blink.cmp').setup {
+    keymap = {
+      preset = 'default',
+    },
+    appearance = {
+      nerd_font_variant = 'normal', -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+    },
+    completion = {
+      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+    },
+    sources = {
+      default = { 'lsp', 'path', 'snippets' },
+    },
+    snippets = { preset = 'luasnip' },
+    fuzzy = { implementation = 'prefer_rust_with_warning' },
+    signature = { enabled = true },
+  }
+end
