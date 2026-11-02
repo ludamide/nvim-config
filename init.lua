@@ -526,4 +526,11 @@ do
   }
   vim.keymap.set('n', '\\', '<cmd>Neotree toggle<CR>', { desc = 'Neotree reveal', silent = true })
   require('neo-tree').setup {}
+
+  -- Terminal
+  vim.pack.add { { src = gh 'akinsho/toggleterm.nvim', version = vim.version.range '*' } }
+  require('toggleterm').setup {
+    direction = 'float',
+  }
+  vim.keymap.set('n', '<leader>tt', '<cmd>ToggleTerm<CR>', { desc = '[T]oggle [T]erminal' })
 end
